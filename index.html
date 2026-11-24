@@ -1,1 +1,1687 @@
 
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>DOSA - Background Editor</title>
+
+<style>
+
+:root {
+    color-scheme: dark;
+    --bg: #1b201d;
+    --panel: #252d27;
+    --line: #465247;
+    --paper: #f0dfbe;
+    --muted: #b4b9ac;
+    --accent: #a94837;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--paper);
+    font-family: Arial, sans-serif;
+}
+
+header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+}
+
+h1 {
+    font-family: Georgia, serif;
+    letter-spacing: 5px;
+    margin: 0;
+}
+
+h1 span {
+    color: #c58d70;
+}
+
+header small {
+    color: var(--muted);
+}
+
+h2 {
+    font-size: 15px;
+    margin: 0 0 12px;
+}
+
+p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.layout {
+    max-width: 1600px;
+    margin: auto;
+    padding: 15px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 330px;
+    gap: 15px;
+}
+
+.panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px;
+    min-width: 0;
+}
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+button, input, select {
+    font: inherit;
+}
+
+button,
+select,
+input[type="number"],
+input[type="text"] {
+    background: #19211b;
+    color: var(--paper);
+    border: 1px solid #576458;
+    border-radius: 5px;
+    padding: 8px;
+}
+
+button {
+    cursor: pointer;
+    min-height: 38px;
+}
+
+button:hover {
+    background: #3b4a3c;
+}
+
+button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.primary {
+    background: var(--accent);
+    border-color: #c36f54;
+    color: white;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: #e7d9b9;
+    border: 1px solid #727668;
+    touch-action: pan-y;
+}
+
+canvas.dragging {
+    touch-action: none;
+    cursor: move;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.grow {
+    flex: 1;
+}
+
+label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+label input:not([type="checkbox"]),
+label select {
+    width: 100%;
+    margin-top: 5px;
+}
+
+input[type="range"] {
+    width: 100%;
+    accent-color: #c37756;
+}
+
+input[type="checkbox"] {
+    accent-color: #c37756;
+}
+
+.fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.full {
+    grid-column: 1 / -1;
+}
+
+.layer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    margin-bottom: 6px;
+    cursor: pointer;
+}
+
+.layer.active {
+    border-color: #d3a269;
+    background: #394337;
+}
+
+.layer img {
+    width: 60px;
+    height: 40px;
+    object-fit: cover;
+}
+
+.layer span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.layer small {
+    display: block;
+    color: var(--muted);
+}
+
+.track {
+    position: relative;
+    height: 28px;
+    margin: 5px 0;
+    background: #18201a;
+    overflow: hidden;
+    border-radius: 4px;
+}
+
+.segment {
+    position: absolute;
+    height: 100%;
+    padding: 5px;
+    overflow: hidden;
+    white-space: nowrap;
+    color: white;
+    font-size: 11px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ffcb90;
+    pointer-events: none;
+}
+
+.timeline {
+    margin-top: 20px;
+}
+
+.time {
+    color: #f1d4a0;
+    font-weight: bold;
+    font-variant-numeric: tabular-nums;
+}
+
+.labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.status {
+    margin-top: 10px;
+    min-height: 20px;
+    font-size: 12px;
+    color: #e5c09e;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 15px 0;
+}
+
+.hidden {
+    display: none !important;
+}
+
+@media (max-width: 850px) {
+
+    .layout {
+        grid-template-columns: 1fr;
+        padding: 8px;
+    }
+
+    header {
+        padding: 10px;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+    <h1>DOSA <span>도사</span></h1>
+
+    <small>WORLD 01 — Background Editor v0.1</small>
+
+    <div class="grow"></div>
+
+    <button id="save">Esporta progetto</button>
+    <button id="load">Apri progetto</button>
+
+    <input
+        type="file"
+        id="projectFile"
+        accept=".json"
+        hidden
+    >
+
+</header>
+
+<main class="layout">
+
+    <!-- ANTEPRIMA -->
+
+    <section class="panel">
+
+        <h2>ANTEPRIMA — 1280 × 720</h2>
+
+        <canvas
+            id="canvas"
+            width="1280"
+            height="720"
+        ></canvas>
+
+        <div class="toolbar">
+
+            <button id="play" class="primary">
+                ▶ Riproduci
+            </button>
+
+            <button id="restart">
+                ↺ Inizio
+            </button>
+
+            <span id="clock" class="time">
+                0:00.0
+            </span>
+
+            <div class="grow"></div>
+
+            <label>
+                <input type="checkbox" id="loop">
+                Ripeti
+            </label>
+
+            <label>
+                <input type="checkbox" id="drag">
+                Sposta strato
+            </label>
+
+        </div>
+
+        <input
+            type="range"
+            id="seek"
+            min="0"
+            max="30"
+            value="0"
+            step="0.05"
+        >
+
+        <div class="labels">
+
+            <span>Inizio</span>
+            <span id="distance">0 px</span>
+            <span id="endTime">0:30.0</span>
+
+        </div>
+
+        <div class="timeline">
+
+            <h2>TIMELINE DEGLI SFONDI</h2>
+
+            <div id="tracks"></div>
+
+            <p>
+                Seleziona una traccia per modificarla.
+                Ogni strato possiede una velocità e
+                una durata indipendenti.
+            </p>
+
+        </div>
+
+        <div id="status" class="status"></div>
+
+    </section>
+
+    <!-- PANNELLO LATERALE -->
+
+    <aside class="sidebar">
+
+        <section class="panel">
+
+            <h2>IMPOSTAZIONI LIVELLO</h2>
+
+            <div class="fields">
+
+                <label>
+                    Durata (secondi)
+
+                    <input
+                        type="number"
+                        id="duration"
+                        min="1"
+                        max="600"
+                        value="30"
+                    >
+                </label>
+
+                <label>
+                    Velocità (px/s)
+
+                    <input
+                        type="number"
+                        id="speed"
+                        min="0"
+                        max="2000"
+                        value="240"
+                    >
+                </label>
+
+            </div>
+
+            <p>
+                La velocità simula la corsa del
+                protagonista. Non sono presenti
+                piattaforme o collisioni.
+            </p>
+
+        </section>
+
+        <section class="panel">
+
+            <h2>STRATI GRAFICI</h2>
+
+            <div class="toolbar">
+
+                <button id="add" class="primary">
+                    + Importa immagini
+                </button>
+
+                <input
+                    type="file"
+                    id="images"
+                    accept="image/*"
+                    multiple
+                    hidden
+                >
+
+            </div>
+
+            <div id="layers"></div>
+
+            <div class="toolbar">
+
+                <button id="up">↑ Davanti</button>
+                <button id="down">↓ Dietro</button>
+                <button id="remove">Elimina</button>
+
+            </div>
+
+            <p>
+                Usa PNG trasparenti per vegetazione,
+                nebbia e strati sovrapposti.
+            </p>
+
+            <hr>
+
+            <div id="properties" class="hidden">
+
+                <h2>PROPRIETÀ DELLO STRATO</h2>
+
+                <div class="fields">
+
+                    <label class="full">
+                        Nome
+                        <input id="name" type="text">
+                    </label>
+
+                    <label>
+                        Parallasse (%)
+                        <input id="factor" type="number"
+                               min="0" max="300">
+                    </label>
+
+                    <label>
+                        Scala (%)
+                        <input id="scale" type="number"
+                               min="5" max="500">
+                    </label>
+
+                    <label>
+                        Posizione X
+                        <input id="x" type="number"
+                               step="10">
+                    </label>
+
+                    <label>
+                        Posizione Y
+                        <input id="y" type="number"
+                               step="10">
+                    </label>
+
+                    <label>
+                        Inizio (secondi)
+                        <input id="start" type="number"
+                               min="0" step="0.1">
+                    </label>
+
+                    <label>
+                        Fine (secondi)
+                        <input id="end" type="number"
+                               min="0" step="0.1">
+                    </label>
+
+                    <label class="full">
+
+                        Ripetizione
+
+                        <select id="repeat">
+
+                            <option value="none">
+                                Nessuna
+                            </option>
+
+                            <option value="repeat">
+                                Ripeti orizzontalmente
+                            </option>
+
+                            <option value="mirror">
+                                Ripeti specchiando
+                            </option>
+
+                        </select>
+
+                    </label>
+
+                    <label class="full">
+
+                        Opacità:
+                        <span id="opacityValue">100%</span>
+
+                        <input
+                            id="opacity"
+                            type="range"
+                            min="0"
+                            max="100"
+                            value="100"
+                        >
+
+                    </label>
+
+                    <label class="full">
+
+                        <input
+                            id="visible"
+                            type="checkbox"
+                            checked
+                        >
+
+                        Visibile
+
+                    </label>
+
+                </div>
+
+                <div class="toolbar">
+
+                    <button id="duplicate">
+                        Duplica strato
+                    </button>
+
+                </div>
+
+            </div>
+
+            <p id="empty">
+                Importa un'immagine per iniziare.
+            </p>
+
+        </section>
+
+    </aside>
+
+</main>
+
+<script>
+
+"use strict";
+
+// ========================================
+// CONFIGURAZIONE GENERALE
+// ========================================
+
+const $ = id => document.getElementById(id);
+
+const canvas = $("canvas");
+const ctx = canvas.getContext("2d");
+
+const W = canvas.width;
+const H = canvas.height;
+
+let duration = 30;
+let speed = 240;
+
+let time = 0;
+let playing = false;
+let lastFrame = null;
+let animationId = null;
+
+let layers = [];
+let selected = null;
+let uid = 0;
+
+const imageCache = new Map();
+
+const clamp = (value, min, max) =>
+    Math.max(min, Math.min(max, value));
+
+const number = (value, fallback = 0) =>
+    Number.isFinite(Number(value))
+        ? Number(value)
+        : fallback;
+
+function status(message) {
+
+    $("status").textContent = message;
+
+}
+
+function formatTime(t) {
+
+    const n = Math.round(t * 10);
+
+    const minutes = Math.floor(n / 600);
+    const seconds = Math.floor(n / 10) % 60;
+    const decimal = n % 10;
+
+    return minutes + ":" +
+        String(seconds).padStart(2, "0") +
+        "." + decimal;
+
+}
+
+function activeLayer() {
+
+    return layers.find(layer => layer.id === selected);
+
+}
+
+
+// ========================================
+// CREAZIONE STRATI
+// ========================================
+
+function createLayer(src, name, options = {}) {
+
+    return {
+
+        id: ++uid,
+        src: src,
+        name: name,
+
+        factor: 25,
+        scale: 100,
+
+        x: 0,
+        y: 0,
+
+        start: 0,
+        end: duration,
+
+        repeat: "repeat",
+
+        opacity: 100,
+        visible: true,
+
+        ...options
+
+    };
+
+}
+
+function getImage(src) {
+
+    if (!imageCache.has(src)) {
+
+        const img = new Image();
+
+        imageCache.set(src, img);
+
+        img.onload = draw;
+
+        img.onerror = () => {
+            status("Impossibile leggere un'immagine.");
+        };
+
+        img.src = src;
+
+    }
+
+    return imageCache.get(src);
+
+}
+
+
+// ========================================
+// RENDERING E PARALLASSE
+// ========================================
+
+function draw() {
+
+    ctx.globalAlpha = 1;
+
+    // Colore carta Hanji
+
+    ctx.fillStyle = "#e7d9b9";
+    ctx.fillRect(0, 0, W, H);
+
+    // Disegna dal fondo al primo piano
+
+    for (const layer of layers) {
+
+        if (!layer.visible) continue;
+
+        if (time < layer.start || time > layer.end) {
+            continue;
+        }
+
+        const img = getImage(layer.src);
+
+        if (!img.complete || !img.naturalWidth) {
+            continue;
+        }
+
+        const height = H * layer.scale / 100;
+
+        const width =
+            height * img.naturalWidth / img.naturalHeight;
+
+        const elapsed = time - layer.start;
+
+        const scroll =
+            elapsed * speed * layer.factor / 100;
+
+        const baseX = layer.x - scroll;
+
+        ctx.globalAlpha = layer.opacity / 100;
+
+        // Immagine singola
+
+        if (layer.repeat === "none") {
+
+            ctx.drawImage(
+                img,
+                baseX,
+                layer.y,
+                width,
+                height
+            );
+
+        } else {
+
+            // Ripetizione infinita orizzontale
+
+            const first = Math.floor(-baseX / width);
+
+            const last = Math.ceil((W - baseX) / width);
+
+            for (let i = first; i <= last; i++) {
+
+                const x = baseX + i * width;
+
+                if (
+                    layer.repeat === "mirror" &&
+                    Math.abs(i % 2) === 1
+                ) {
+
+                    ctx.save();
+
+                    ctx.translate(x + width, layer.y);
+                    ctx.scale(-1, 1);
+
+                    ctx.drawImage(
+                        img,
+                        0,
+                        0,
+                        width,
+                        height
+                    );
+
+                    ctx.restore();
+
+                } else {
+
+                    ctx.drawImage(
+                        img,
+                        x,
+                        layer.y,
+                        width,
+                        height
+                    );
+
+                }
+
+            }
+
+        }
+
+    }
+
+    ctx.globalAlpha = 1;
+
+    // Messaggio iniziale
+
+    if (layers.length === 0) {
+
+        ctx.fillStyle = "#4e5144";
+
+        ctx.textAlign = "center";
+
+        ctx.font = "64px Georgia";
+
+        ctx.fillText("도사", W / 2, H / 2 - 50);
+
+        ctx.font = "34px Georgia";
+
+        ctx.fillText("DOSA", W / 2, H / 2 + 10);
+
+        ctx.font = "20px Arial";
+
+        ctx.fillText(
+            "Importa un paesaggio per iniziare",
+            W / 2,
+            H / 2 + 65
+        );
+
+    }
+
+    // Aggiornamento interfaccia
+
+    $("clock").textContent =
+        formatTime(time) + " / " + formatTime(duration);
+
+    $("seek").value = time;
+
+    $("distance").textContent =
+        Math.round(time * speed)
+            .toLocaleString("it-IT") + " px";
+
+    document.querySelectorAll(".playhead")
+        .forEach(head => {
+
+            head.style.left =
+                clamp(time / duration * 100, 0, 100) + "%";
+
+        });
+
+}
+
+
+// ========================================
+// TIMELINE
+// ========================================
+
+function renderTracks() {
+
+    const root = $("tracks");
+
+    root.replaceChildren();
+
+    for (const layer of [...layers].reverse()) {
+
+        const track = document.createElement("div");
+
+        track.className = "track";
+
+        const segment = document.createElement("div");
+
+        segment.className = "segment";
+
+        segment.style.left =
+            layer.start / duration * 100 + "%";
+
+        segment.style.width =
+            (layer.end - layer.start) / duration * 100 + "%";
+
+        segment.style.background =
+            layer.id === selected
+                ? "#a15f49"
+                : "#637e64";
+
+        segment.style.opacity =
+            layer.visible ? "0.9" : "0.35";
+
+        segment.textContent = layer.name;
+
+        segment.title = layer.name;
+
+        segment.onclick = () => selectLayer(layer.id);
+
+        const head = document.createElement("div");
+
+        head.className = "playhead";
+
+        head.style.left = time / duration * 100 + "%";
+
+        track.append(segment, head);
+
+        root.append(track);
+
+    }
+
+}
+
+
+// ========================================
+// LISTA STRATI
+// ========================================
+
+function renderLayers() {
+
+    const root = $("layers");
+
+    root.replaceChildren();
+
+    for (const layer of [...layers].reverse()) {
+
+        const row = document.createElement("div");
+
+        row.className = "layer" +
+            (layer.id === selected ? " active" : "");
+
+        const img = document.createElement("img");
+
+        img.src = layer.src;
+        img.alt = "";
+
+        const text = document.createElement("span");
+
+        text.textContent = layer.name;
+
+        const small = document.createElement("small");
+
+        small.textContent =
+            layer.factor + "% — " +
+            (layer.visible ? "Visibile" : "Nascosto");
+
+        text.append(small);
+
+        row.append(img, text);
+
+        row.onclick = () => selectLayer(layer.id);
+
+        root.append(row);
+
+    }
+
+    const index = layers.findIndex(
+        layer => layer.id === selected
+    );
+
+    $("up").disabled =
+        index < 0 || index === layers.length - 1;
+
+    $("down").disabled = index <= 0;
+
+    $("remove").disabled = index < 0;
+
+    renderTracks();
+
+}
+
+
+// ========================================
+// PROPRIETÀ STRATI
+// ========================================
+
+const keys = [
+
+    "name",
+    "factor",
+    "scale",
+    "x",
+    "y",
+    "start",
+    "end",
+    "repeat",
+    "opacity",
+    "visible"
+
+];
+
+function updateProperties() {
+
+    const layer = activeLayer();
+
+    $("properties").classList.toggle("hidden", !layer);
+
+    $("empty").classList.toggle("hidden", !!layer);
+
+    if (!layer) return;
+
+    for (const key of keys) {
+
+        if (key === "visible") {
+
+            $(key).checked = layer[key];
+
+        } else {
+
+            $(key).value = layer[key];
+
+        }
+
+    }
+
+    $("start").max = duration;
+    $("end").max = duration;
+
+    $("opacityValue").textContent =
+        layer.opacity + "%";
+
+}
+
+function refresh() {
+
+    renderLayers();
+    updateProperties();
+    draw();
+
+}
+
+function selectLayer(id) {
+
+    selected = id;
+
+    refresh();
+
+}
+
+for (const key of keys) {
+
+    const element = $(key);
+
+    const event =
+        key === "opacity" ? "input" : "change";
+
+    element.addEventListener(event, () => {
+
+        const layer = activeLayer();
+
+        if (!layer) return;
+
+        if (key === "visible") {
+
+            layer[key] = element.checked;
+
+        } else if (key === "name") {
+
+            layer[key] =
+                element.value.trim() || "Strato";
+
+        } else if (key === "repeat") {
+
+            layer[key] = element.value;
+
+        } else {
+
+            let value = number(element.value, layer[key]);
+
+            if (key === "factor") {
+                value = clamp(value, 0, 300);
+            }
+
+            if (key === "scale") {
+                value = clamp(value, 5, 500);
+            }
+
+            if (key === "opacity") {
+                value = clamp(value, 0, 100);
+            }
+
+            if (key === "start") {
+                value = clamp(value, 0, layer.end);
+            }
+
+            if (key === "end") {
+                value = clamp(value, layer.start, duration);
+            }
+
+            layer[key] = value;
+
+        }
+
+        refresh();
+
+    });
+
+}
+
+
+// ========================================
+// RIPRODUZIONE
+// ========================================
+
+function pause() {
+
+    playing = false;
+
+    lastFrame = null;
+
+    if (animationId !== null) {
+
+        cancelAnimationFrame(animationId);
+
+        animationId = null;
+
+    }
+
+    $("play").textContent = "▶ Riproduci";
+
+}
+
+function animate(now) {
+
+    if (!playing) return;
+
+    if (lastFrame !== null) {
+
+        time += (now - lastFrame) / 1000;
+
+        if (time >= duration) {
+
+            if ($("loop").checked) {
+
+                time %= duration;
+
+            } else {
+
+                time = duration;
+
+                pause();
+
+            }
+
+        }
+
+    }
+
+    lastFrame = now;
+
+    draw();
+
+    if (playing) {
+
+        animationId = requestAnimationFrame(animate);
+
+    }
+
+}
+
+$("play").onclick = () => {
+
+    if (playing) {
+
+        pause();
+
+        return;
+
+    }
+
+    if (time >= duration) {
+
+        time = 0;
+
+    }
+
+    playing = true;
+
+    lastFrame = null;
+
+    $("play").textContent = "Ⅱ Pausa";
+
+    animationId = requestAnimationFrame(animate);
+
+};
+
+$("restart").onclick = () => {
+
+    pause();
+
+    time = 0;
+
+    draw();
+
+};
+
+$("seek").oninput = event => {
+
+    pause();
+
+    time = number(event.target.value);
+
+    draw();
+
+};
+
+
+// ========================================
+// DURATA E VELOCITÀ
+// ========================================
+
+function updateSettings() {
+
+    const oldDuration = duration;
+
+    duration = clamp(
+        number($("duration").value, 30),
+        1,
+        600
+    );
+
+    speed = clamp(
+        number($("speed").value, 240),
+        0,
+        2000
+    );
+
+    $("duration").value = duration;
+
+    $("speed").value = speed;
+
+    $("seek").max = duration;
+
+    $("endTime").textContent = formatTime(duration);
+
+    for (const layer of layers) {
+
+        if (layer.end === oldDuration) {
+
+            layer.end = duration;
+
+        }
+
+        layer.start = clamp(layer.start, 0, duration);
+
+        layer.end = clamp(
+            layer.end,
+            layer.start,
+            duration
+        );
+
+    }
+
+    time = clamp(time, 0, duration);
+
+    refresh();
+
+}
+
+$("duration").onchange = updateSettings;
+
+$("speed").onchange = updateSettings;
+
+
+// ========================================
+// ORDINE DEGLI STRATI
+// ========================================
+
+function moveLayer(direction) {
+
+    const i = layers.findIndex(
+        layer => layer.id === selected
+    );
+
+    const j = i + direction;
+
+    if (i < 0 || j < 0 || j >= layers.length) {
+
+        return;
+
+    }
+
+    [layers[i], layers[j]] =
+        [layers[j], layers[i]];
+
+    refresh();
+
+}
+
+$("up").onclick = () => moveLayer(1);
+
+$("down").onclick = () => moveLayer(-1);
+
+$("remove").onclick = () => {
+
+    const index = layers.findIndex(
+        layer => layer.id === selected
+    );
+
+    if (index < 0) return;
+
+    layers.splice(index, 1);
+
+    selected =
+        layers[Math.min(index, layers.length - 1)]?.id
+        ?? null;
+
+    refresh();
+
+};
+
+$("duplicate").onclick = () => {
+
+    const layer = activeLayer();
+
+    if (!layer) return;
+
+    const copy = {
+
+        ...layer,
+
+        id: ++uid,
+
+        name: layer.name + " (copia)"
+
+    };
+
+    layers.splice(
+        layers.indexOf(layer) + 1,
+        0,
+        copy
+    );
+
+    selectLayer(copy.id);
+
+};
+
+
+// ========================================
+// IMPORTAZIONE IMMAGINI
+// ========================================
+
+function readImage(file) {
+
+    return new Promise((resolve, reject) => {
+
+        const reader = new FileReader();
+
+        reader.onload = () => resolve(reader.result);
+
+        reader.onerror = reject;
+
+        reader.readAsDataURL(file);
+
+    });
+
+}
+
+$("add").onclick = () => {
+
+    $("images").click();
+
+};
+
+$("images").onchange = async event => {
+
+    pause();
+
+    let count = 0;
+
+    for (const file of event.target.files) {
+
+        try {
+
+            const src = await readImage(file);
+
+            const img = new Image();
+
+            img.src = src;
+
+            await img.decode();
+
+            const layer = createLayer(
+
+                src,
+
+                file.name.replace(/\.[^.]+$/, "")
+
+            );
+
+            layers.push(layer);
+
+            selected = layer.id;
+
+            count++;
+
+        } catch {
+
+            status("Immagine non valida: " + file.name);
+
+        }
+
+    }
+
+    event.target.value = "";
+
+    refresh();
+
+    if (count) {
+
+        status(count + " immagine/i importata/e.");
+
+    }
+
+};
+
+
+// ========================================
+// SPOSTAMENTO MANUALE
+// ========================================
+
+let drag = null;
+
+$("drag").onchange = () => {
+
+    canvas.classList.toggle(
+        "dragging",
+        $("drag").checked
+    );
+
+};
+
+canvas.onpointerdown = event => {
+
+    const layer = activeLayer();
+
+    if (!$("drag").checked || !layer) return;
+
+    pause();
+
+    canvas.setPointerCapture(event.pointerId);
+
+    drag = {
+
+        id: event.pointerId,
+
+        x: event.clientX,
+        y: event.clientY,
+
+        originalX: layer.x,
+        originalY: layer.y,
+
+        layer: layer
+
+    };
+
+    event.preventDefault();
+
+};
+
+canvas.onpointermove = event => {
+
+    if (!drag || drag.id !== event.pointerId) return;
+
+    const rect = canvas.getBoundingClientRect();
+
+    drag.layer.x = Math.round(
+
+        drag.originalX +
+
+        (event.clientX - drag.x) * W / rect.width
+
+    );
+
+    drag.layer.y = Math.round(
+
+        drag.originalY +
+
+        (event.clientY - drag.y) * H / rect.height
+
+    );
+
+    updateProperties();
+
+    draw();
+
+};
+
+canvas.onpointerup =
+canvas.onpointercancel = () => {
+
+    drag = null;
+
+};
+
+
+// ========================================
+// ESPORTAZIONE PROGETTO
+// ========================================
+
+$("save").onclick = () => {
+
+    const project = {
+
+        format: "DOSA-background-v1",
+
+        width: W,
+        height: H,
+
+        duration: duration,
+
+        speed: speed,
+
+        layers: layers
+
+    };
+
+    const blob = new Blob(
+
+        [JSON.stringify(project)],
+
+        { type: "application/json" }
+
+    );
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = url;
+
+    link.download = "DOSA_W1_L1_fondali.json";
+
+    document.body.append(link);
+
+    link.click();
+
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+    status("Progetto esportato con tutte le immagini.");
+
+};
+
+
+// ========================================
+// CARICAMENTO PROGETTO
+// ========================================
+
+$("load").onclick = () => {
+
+    $("projectFile").click();
+
+};
+
+$("projectFile").onchange = async event => {
+
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    try {
+
+        const project = JSON.parse(await file.text());
+
+        if (
+            project.format !== "DOSA-background-v1" ||
+            !Array.isArray(project.layers) ||
+            project.layers.some(layer =>
+                !layer ||
+                typeof layer.src !== "string" ||
+                !/^data:image\//i.test(layer.src)
+            )
+        ) {
+
+            throw new Error("Formato non valido");
+
+        }
+
+        pause();
+
+        duration = clamp(
+            number(project.duration, 30), 1, 600
+        );
+
+        speed = clamp(
+            number(project.speed, 240), 0, 2000
+        );
+
+        layers = project.layers.map(layer => {
+
+            const start = clamp(
+                number(layer.start), 0, duration
+            );
+
+            return createLayer(
+
+                layer.src,
+
+                String(layer.name || "Strato"),
+
+                {
+
+                    factor: clamp(
+                        number(layer.factor, 25), 0, 300
+                    ),
+
+                    scale: clamp(
+                        number(layer.scale, 100), 5, 500
+                    ),
+
+                    x: number(layer.x),
+
+                    y: number(layer.y),
+
+                    start: start,
+
+                    end: clamp(
+                        number(layer.end, duration),
+                        start,
+                        duration
+                    ),
+
+                    repeat: [
+                        "none", "repeat", "mirror"
+                    ].includes(layer.repeat)
+                        ? layer.repeat
+                        : "none",
+
+                    opacity: clamp(
+                        number(layer.opacity, 100), 0, 100
+                    ),
+
+                    visible: layer.visible !== false
+
+                }
+
+            );
+
+        });
+
+        selected = layers.at(-1)?.id ?? null;
+
+        time = 0;
+
+        $("duration").value = duration;
+
+        $("speed").value = speed;
+
+        updateSettings();
+
+        status("Progetto caricato correttamente.");
+
+    } catch (error) {
+
+        status("Errore: " + error.message);
+
+    }
+
+    event.target.value = "";
+
+};
+
+
+// ========================================
+// AVVIO EDITOR
+// ========================================
+
+refresh();
+
+status("DOSA Background Editor pronto.");
+
+</script>
+
+</body>
+</html>
+
